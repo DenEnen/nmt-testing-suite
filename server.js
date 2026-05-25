@@ -1,17 +1,24 @@
 const express = require('express');
-const cors = require('cors');
-const path = require('path');
+const cors    = require('cors');
+const path    = require('path');
+const fs      = require('fs');
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3000;
+
+// ── Resolve public dir robustly ──────────────────────────────────────────────
+const PUBLIC_DIR = path.resolve(__dirname, 'public');
+console.log('[boot] public dir →', PUBLIC_DIR);
+console.log('[boot] index.html exists?', fs.existsSync(path.join(PUBLIC_DIR, 'index.html')));
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// API: load test session
+// Serve static assets BEFORE the catch-all
+app.use(express.static(PUBLIC_DIR, { index: false }));
+
+// ── API ──────────────────────────────────────────────────────────────────────
 app.get('/api/session/:id', (req, res) => {
-  // Example session — replace with DB or file-based storage as needed
   res.json({
     sessionId: req.params.id,
     student: { name: 'Тест Учасник', code: '00000001' },
@@ -21,29 +28,34 @@ app.get('/api/session/:id', (req, res) => {
   });
 });
 
-// API: save answers
 app.post('/api/session/:id/answer', (req, res) => {
   const { questionId, answer } = req.body;
-  console.log(`Session ${req.params.id} — Q${questionId}: ${answer}`);
+  console.log(`[answer] session=${req.params.id} q=${questionId} a=${JSON.stringify(answer)}`);
   res.json({ ok: true });
 });
 
-// API: submit test
 app.post('/api/session/:id/submit', (req, res) => {
-  console.log(`Session ${req.params.id} submitted`);
+  console.log(`[submit] session=${req.params.id}`);
   res.json({ ok: true, message: 'Тест завершено успішно' });
 });
 
-// Catch-all → serve SPA
+// Health-check for Render
+app.get('/health', (req, res) => res.send('OK'));
+
+// ── SPA catch-all: serve index.html for every non-API GET ────────────────────
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const index = path.join(PUBLIC_DIR, 'index.html');
+  if (!fs.existsSync(index)) {
+    return res.status(500).send(`index.html not found at ${index}`);
+  }
+  res.sendFile(index);
 });
 
 app.listen(PORT, () => {
-  console.log(`NMT Testing Suite running on port ${PORT}`);
+  console.log(`[ready] NMT Testing Suite on port ${PORT}`);
 });
 
-// ─── Demo data ───────────────────────────────────────────────────────────────
+// ── Demo data ────────────────────────────────────────────────────────────────
 const subjects = [
   {
     id: 'ukr',
@@ -74,9 +86,9 @@ function generateQuestions(subjectId, count) {
     number: i + 1,
     type: i < count - 6 ? 'single' : (i < count - 2 ? 'multi' : 'open'),
     text: getQuestionText(subjectId, i),
-    options: i < count - 2 ? ['А', 'Б', 'В', 'Г'].map((l, j) => ({
+    options: i < count - 2 ? ['А', 'Б', 'В', 'Г'].map((l) => ({
       label: l,
-      text: `Варіант відповіді ${l} для запитання ${i + 1}`
+      text: `Варіант відповіді ${l} для завдання ${i + 1}`
     })) : null,
     answer: null
   }));
@@ -85,19 +97,19 @@ function generateQuestions(subjectId, count) {
 function getQuestionText(subject, idx) {
   const templates = {
     ukr: [
-      `Укажіть рядок, у якому всі слова написані правильно (запитання ${idx + 1}).`,
-      `Визначте, яке слово є синонімом до слова «відповідь» (запитання ${idx + 1}).`,
-      `Оберіть речення з правильно розставленими розділовими знаками (запитання ${idx + 1}).`
+      `Укажіть рядок, у якому всі слова написані правильно (завдання ${idx + 1}).`,
+      `Визначте, яке слово є синонімом до слова «відповідь» (завдання ${idx + 1}).`,
+      `Оберіть речення з правильно розставленими розділовими знаками (завдання ${idx + 1}).`
     ],
     math: [
-      `Знайдіть значення виразу: 2x² + 3x − 5 при x = 2 (запитання ${idx + 1}).`,
-      `Розв'яжіть рівняння: log₂(x + 3) = 4 (запитання ${idx + 1}).`,
-      `Обчисліть похідну функції f(x) = sin(3x) · eˣ (запитання ${idx + 1}).`
+      `Знайдіть значення виразу: 2x² + 3x − 5 при x = 2 (завдання ${idx + 1}).`,
+      `Розв'яжіть рівняння: log₂(x + 3) = 4 (завдання ${idx + 1}).`,
+      `Обчисліть похідну функції f(x) = sin(3x) · eˣ (завдання ${idx + 1}).`
     ],
     history: [
-      `Коли була проголошена незалежність України? (запитання ${idx + 1})`,
-      `Хто підписав Переяславську угоду з боку України? (запитання ${idx + 1})`,
-      `Укажіть рік заснування Київської Русі (запитання ${idx + 1}).`
+      `Коли була проголошена незалежність України? (завдання ${idx + 1})`,
+      `Хто підписав Переяславську угоду з боку України? (завдання ${idx + 1})`,
+      `Укажіть рік заснування Київської Русі (завдання ${idx + 1}).`
     ]
   };
   const arr = templates[subject] || templates.ukr;
