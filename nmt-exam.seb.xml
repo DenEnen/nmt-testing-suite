@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║   Safe Exam Browser — NMT Testing Suite Configuration       ║
+  ║   Ukrainian National Multipurpose Test UI Replica           ║
+  ║                                                             ║
+  ║   HOW TO USE:                                               ║
+  ║   1. Replace YOUR_RENDER_URL with your Render.com URL       ║
+  ║   2. Replace YOUR_QUIT_PASSWORD with a secure password      ║
+  ║   3. Open SEB, load this file (File → Open Settings)        ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<plist version="1.0">
+<dict>
+
+  <!-- ═══ EXAM URL ══════════════════════════════════════════════ -->
+  <key>startURL</key>
+  <string>https://YOUR_RENDER_URL.onrender.com/?session=demo</string>
+
+  <!-- ═══ BROWSER RESTRICTIONS ══════════════════════════════════ -->
+  <!-- Prevent navigating away from the exam -->
+  <key>browserViewMode</key>
+  <integer>1</integer>
+
+  <!-- Disable the URL bar (kiosk-style) -->
+  <key>showTaskBar</key>
+  <false/>
+
+  <!-- Hide browser navigation buttons -->
+  <key>showNavigationButtons</key>
+  <false/>
+
+  <!-- Disable reload / F5 -->
+  <key>browserWindowAllowReload</key>
+  <false/>
+
+  <!-- Block right-click context menu -->
+  <key>enableBrowserWindowToolbar</key>
+  <false/>
+
+  <!-- Allow zoom (useful for accessibility) -->
+  <key>allowBrowsingBackForward</key>
+  <false/>
+
+  <!-- ═══ ZOOM & DISPLAY ═════════════════════════════════════════ -->
+  <key>zoomMode</key>
+  <integer>0</integer>
+
+  <!-- ═══ ALLOWED URLS ═══════════════════════════════════════════ -->
+  <!-- Whitelist only your Render domain -->
+  <key>URLFilterEnable</key>
+  <true/>
+  <key>URLFilterEnableContentFilter</key>
+  <true/>
+  <key>URLFilterRules</key>
+  <array>
+    <dict>
+      <key>action</key>
+      <integer>1</integer>
+      <!-- Allow your exam server -->
+      <key>expression</key>
+      <string>YOUR_RENDER_URL.onrender.com</string>
+      <key>regex</key>
+      <false/>
+    </dict>
+    <dict>
+      <key>action</key>
+      <integer>1</integer>
+      <!-- Allow Google Fonts (used by UI) -->
+      <key>expression</key>
+      <string>fonts.googleapis.com</string>
+      <key>regex</key>
+      <false/>
+    </dict>
+    <dict>
+      <key>action</key>
+      <integer>1</integer>
+      <key>expression</key>
+      <string>fonts.gstatic.com</string>
+      <key>regex</key>
+      <false/>
+    </dict>
+  </array>
+
+  <!-- ═══ KEYBOARD RESTRICTIONS ═════════════════════════════════ -->
+  <!-- Block Alt+Tab, Win key, etc. -->
+  <key>enableAltMouseWheel</key>
+  <false/>
+
+  <!-- Disable PrintScreen -->
+  <key>enablePrintScreen</key>
+  <false/>
+
+  <!-- ═══ SYSTEM RESTRICTIONS ════════════════════════════════════ -->
+  <!-- Disable task switcher -->
+  <key>enableSwitchUser</key>
+  <false/>
+
+  <!-- Prevent sleep/screen saver during exam -->
+  <key>enableVirtualMachine</key>
+  <false/>
+
+  <!-- Detect if running in VM (set true to block VMs) -->
+  <key>detectStoppedProcess</key>
+  <true/>
+
+  <!-- ═══ AUDIO ════════════════════════════════════════════════== -->
+  <key>audioControlEnabled</key>
+  <false/>
+
+  <!-- ═══ QUIT / EXIT ════════════════════════════════════════════ -->
+  <!-- Password required to quit SEB -->
+  <key>hashedQuitPassword</key>
+  <!-- SHA-256 hash of "YOUR_QUIT_PASSWORD"                        -->
+  <!-- Generate: echo -n 'your_password' | sha256sum              -->
+  <!-- Replace this placeholder with your actual SHA-256 hash:    -->
+  <string>REPLACE_WITH_SHA256_HASH_OF_YOUR_QUIT_PASSWORD</string>
+
+  <!-- Show "Quit" button in toolbar (optional) -->
+  <key>showQuitButton</key>
+  <true/>
+
+  <!-- ═══ BROWSER USER AGENT ════════════════════════════════════ -->
+  <!-- Identifies requests as coming from SEB -->
+  <key>browserUserAgentSuffix</key>
+  <string>SEB/3.0 NMT-Testing</string>
+
+</dict>
+</plist>

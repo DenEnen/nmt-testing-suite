@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  ╔══════════════════════════════════════════════════════════╗
+  ║   Safe Exam Browser — NMT Testing Suite Configuration   ║
+  ║   Replace YOUR_RENDER_URL with your actual Render URL   ║
+  ╚══════════════════════════════════════════════════════════╝
+
+  HOW TO USE:
+  1. Replace YOUR_RENDER_URL below with e.g. https://nmt-testing-suite.onrender.com
+  2. Set a strong quitPassword (students cannot close SEB without it)
+  3. Optionally set a configFilePassword so students can't open this file
+  4. Save as   nmt_exam.seb
+  5. Double-click to open in Safe Exam Browser
+-->
+<plist version="1.0">
+<dict>
+
+  <!-- ═══ START URL ══════════════════════════════════════════ -->
+  <key>startURL</key>
+  <string>https://YOUR_RENDER_URL/?session=demo</string>
+
+  <!-- ═══ BROWSER SECURITY ══════════════════════════════════ -->
+  <!-- Prevent navigating away from the exam URL -->
+  <key>allowedURLFilter</key>
+  <string>https://YOUR_RENDER_URL.*</string>
+
+  <key>blockPopUpWindows</key>
+  <true/>
+
+  <key>newBrowserWindowByLinkPolicy</key>
+  <integer>0</integer>  <!-- 0 = block, 2 = same window -->
+
+  <key>enableBrowserWindowToolbar</key>
+  <false/>
+
+  <key>showReloadButton</key>
+  <false/>
+
+  <key>showBackForwardButtons</key>
+  <false/>
+
+  <key>showURLInAddressBar</key>
+  <false/>
+
+  <!-- ═══ QUIT / PASSWORDS ═══════════════════════════════════ -->
+  <!-- Students need this password to quit SEB during the exam -->
+  <key>hashedQuitPassword</key>
+  <!-- SHA-256 hash of your quit password. Default shown = "admin123"
+       Generate your own at: https://emn178.github.io/online-tools/sha256.html
+       Replace the string below with your hash. -->
+  <string>240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9</string>
+
+  <!-- Prevent students from opening SEB preferences -->
+  <key>enablePreferencesKey</key>
+  <false/>
+
+  <!-- ═══ SYSTEM LOCKDOWN ════════════════════════════════════ -->
+  <!-- Disable task switching -->
+  <key>enableAppSwitcherCheck</key>
+  <true/>
+
+  <key>killExplorerShell</key>
+  <false/>
+
+  <!-- Block screen capture -->
+  <key>enablePrintScreen</key>
+  <false/>
+
+  <!-- Lock screen orientation (tablet mode) -->
+  <key>enableZoomPage</key>
+  <false/>
+
+  <!-- ═══ KEYBOARD ════════════════════════════════════════════ -->
+  <!-- Allow: alphanumeric + arrows + Tab + Enter + Backspace   -->
+  <!-- Block:  Alt+Tab, Win key, Ctrl+Alt+Del, etc.             -->
+  <key>enableF1</key><false/>
+  <key>enableF2</key><false/>
+  <key>enableF3</key><false/>
+  <key>enableF4</key><false/>
+  <key>enableF5</key><false/>
+  <key>enableF6</key><false/>
+  <key>enableF7</key><false/>
+  <key>enableF8</key><false/>
+  <key>enableF9</key><false/>
+  <key>enableF10</key><false/>
+  <key>enableF11</key><false/>
+  <key>enableF12</key><false/>
+  <key>enableEsc</key><false/>
+  <key>enableCtrlEsc</key><false/>
+  <key>enableAltF4</key><false/>
+  <key>enableStartMenu</key><false/>
+  <key>enableRightMouse</key><false/>
+
+  <!-- ═══ AUDIO / SPELL CHECK ═══════════════════════════════ -->
+  <key>enableAudioControl</key>
+  <false/>
+
+  <key>enableSpellChecking</key>
+  <false/>
+
+  <key>allowDictionaryLookup</key>
+  <false/>
+
+  <!-- ═══ DISPLAY ════════════════════════════════════════════ -->
+  <key>browserWindowAllowAddressBar</key>
+  <false/>
+
+  <key>browserViewMode</key>
+  <integer>1</integer>  <!-- 1 = fullscreen -->
+
+  <key>windowWidth</key>
+  <integer>1280</integer>
+
+  <key>windowHeight</key>
+  <integer>800</integer>
+
+  <!-- ═══ CONTENT SECURITY ═══════════════════════════════════ -->
+  <!-- Block all non-exam content -->
+  <key>URLFilterEnable</key>
+  <true/>
+
+  <key>URLFilterEnableContentFilter</key>
+  <true/>
+
+  <!-- Regex: only allow your Render domain + Google Fonts (for UI fonts) -->
+  <key>URLFilterRules</key>
+  <array>
+    <dict>
+      <key>active</key><true/>
+      <key>regex</key><false/>
+      <key>action</key><integer>1</integer>  <!-- 1 = allow -->
+      <key>expression</key>
+      <string>https://YOUR_RENDER_URL</string>
+    </dict>
+    <dict>
+      <key>active</key><true/>
+      <key>regex</key><false/>
+      <key>action</key><integer>1</integer>
+      <key>expression</key>
+      <string>https://fonts.googleapis.com</string>
+    </dict>
+    <dict>
+      <key>active</key><true/>
+      <key>regex</key><false/>
+      <key>action</key><integer>1</integer>
+      <key>expression</key>
+      <string>https://fonts.gstatic.com</string>
+    </dict>
+    <dict>
+      <key>active</key><true/>
+      <key>regex</key><false/>
+      <key>action</key><integer>0</integer>  <!-- 0 = block everything else -->
+      <key>expression</key>
+      <string>.*</string>
+    </dict>
+  </array>
+
+  <!-- ═══ BROWSER USER AGENT ════════════════════════════════ -->
+  <!-- Server can detect SEB via this header: X-SafeExamBrowser-* -->
+  <key>browserUserAgentEnvironment</key>
+  <string>SEB/3.0 NMT-Testing/1.0</string>
+
+  <!-- ═══ EXAM SESSION ═══════════════════════════════════════ -->
+  <!-- Send Browser Exam Key in request headers for server-side verification -->
+  <key>sendBrowserExamKey</key>
+  <true/>
+
+  <key>examSessionClearCookiesOnStart</key>
+  <true/>
+
+</dict>
+</plist>
