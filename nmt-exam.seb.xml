@@ -17,7 +17,7 @@
 
   <!-- ═══ EXAM URL ══════════════════════════════════════════════ -->
   <key>startURL</key>
-  <string>https://YOUR_RENDER_URL.onrender.com/?session=demo</string>
+  <string>https://nmt-testing-suite.onrender.com/?session=demo</string>
 
   <!-- ═══ BROWSER RESTRICTIONS ══════════════════════════════════ -->
   <!-- Prevent navigating away from the exam -->
@@ -61,7 +61,7 @@
       <integer>1</integer>
       <!-- Allow your exam server -->
       <key>expression</key>
-      <string>YOUR_RENDER_URL.onrender.com</string>
+      <string>https://nmt-testing-suite.onrender.com/</string>
       <key>regex</key>
       <false/>
     </dict>
@@ -116,7 +116,7 @@
   <!-- SHA-256 hash of "YOUR_QUIT_PASSWORD"                        -->
   <!-- Generate: echo -n 'your_password' | sha256sum              -->
   <!-- Replace this placeholder with your actual SHA-256 hash:    -->
-  <string>REPLACE_WITH_SHA256_HASH_OF_YOUR_QUIT_PASSWORD</string>
+  <string>a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3</string>
 
   <!-- Show "Quit" button in toolbar (optional) -->
   <key>showQuitButton</key>
