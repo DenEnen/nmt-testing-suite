@@ -471,7 +471,7 @@ const NMT = (() => {
     /* ─── EXPAND ──────────────────────────── */
     function toggleExpand() {
         state.expanded = !state.expanded;
-        const rp = document.querySelector('.right-panel');
+        const rp = document.getElementById('right-panel');
         if (rp) rp.style.display = state.expanded ? 'none' : '';
         document.getElementById('icon-expand').style.display   = state.expanded ? 'none' : '';
         document.getElementById('icon-collapse').style.display = state.expanded ? '' : 'none';
