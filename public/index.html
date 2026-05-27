@@ -1,155 +1,255 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>НМТ — Тестування</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" onerror="this.remove()" />
-  <link rel="stylesheet" href="/css/nmt.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>НМТ — Тестування</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/nmt.css">
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════════ HEADER -->
-<header class="nmt-header" id="header">
-  <div class="nmt-logo">
-    <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-      <rect width="34" height="17" fill="#FFD700"/>
-      <rect y="17" width="34" height="17" fill="#005BBB"/>
-      <circle cx="17" cy="17" r="6.5" fill="white" fill-opacity="0.95"/>
-      <text x="17" y="21" text-anchor="middle" fill="#c61036" font-size="7.5" font-weight="700" font-family="Open Sans,sans-serif">НМТ</text>
+<!-- ══════════════ LOGIN SCREEN ══════════════ -->
+<div id="screen-login" class="overlay-screen" style="display:flex;">
+    <svg width="60" height="60" viewBox="0 0 60 60" style="margin-bottom:16px;">
+        <rect width="60" height="30" fill="#FFD700"/>
+        <rect y="30" width="60" height="30" fill="#005BBB"/>
+        <circle cx="30" cy="30" r="11" fill="white" fill-opacity="0.95"/>
+        <text x="30" y="34.5" text-anchor="middle" fill="#c61036" font-size="10" font-weight="700" font-family="Open Sans,sans-serif">НМТ</text>
     </svg>
-    <div class="logo-text">
-      <span class="logo-title">ПРОБНИЙ НМТ-2026</span>
-      <span class="logo-subtitle">Національний мультипредметний тест</span>
-    </div>
-  </div>
 
-  <div class="timer-block" id="timerBlock">
-    <svg class="timer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
-      <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
-    </svg>
-    <span class="timer-label">Залишилось:</span>
-    <span class="timer-value" id="timer">02:00:00</span>
-  </div>
+    <h1 style="color:var(--text-dark);font-size:26px;margin-bottom:6px;font-weight:700;">
+        ПРОБНИЙ НМТ — 2026
+    </h1>
+    <p style="font-size:14px;margin-bottom:28px;color:#888;">
+        Національний мультипредметний тест
+    </p>
 
-  <div class="header-right">
-    <div class="student-info">
-      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" width="17" height="17">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-      </svg>
-      <div class="student-details">
-        <span class="student-name" id="studentName">Учасник тесту</span>
-        <span class="student-code" id="studentCode">№ 00000001</span>
-      </div>
-    </div>
-    <button class="btn-finish" id="btnFinish" onclick="NMT.finish()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="15" height="15">
-        <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-      </svg>
-      Завершити тест
-    </button>
-  </div>
-</header>
+    <div id="login-error" style="color:var(--primary-red);font-size:14px;margin-bottom:14px;
+        display:none;font-weight:600;background:#fef2f4;border:1px solid #fbd5dc;
+        padding:10px 20px;border-radius:4px;"></div>
 
-<!-- ═══════════════════════════════════════════════════════ SUBJECT TABS -->
-<nav class="subject-tabs" id="subjectTabs"></nav>
-
-<!-- ═══════════════════════════════════════════════════════ MAIN -->
-<main class="nmt-main" id="main">
-
-  <!-- LEFT: question -->
-  <section class="question-area" id="questionArea">
-    <div class="question-header">
-      <span class="question-badge" id="questionBadge">Завдання 1</span>
-      <span class="question-type-label" id="questionTypeLabel">Одна правильна відповідь</span>
-    </div>
-
-    <div class="question-text" id="questionText">
-      Завантаження завдання…
-    </div>
-
-    <!-- Single-choice options -->
-    <div class="options-list" id="optionsList"></div>
-
-    <!-- Multi-choice options -->
-    <div class="options-list multi" id="optionsMulti" style="display:none"></div>
-
-    <!-- Open answer -->
-    <div class="open-answer" id="openAnswer" style="display:none">
-      <label class="open-label">Введіть відповідь:</label>
-      <input type="text" class="open-input" id="openInput"
-             placeholder="Введіть числову або текстову відповідь"
-             oninput="NMT.saveOpen(this.value)" />
-      <p class="open-hint">Якщо відповідь дробова — використовуйте крапку (наприклад: 3.14)</p>
+    <div style="width:340px;display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
+        <div style="display:flex;flex-direction:column;gap:5px;text-align:left;">
+            <label for="login-username" style="font-size:13px;font-weight:600;color:#555;">Логін</label>
+            <input type="text" id="login-username" class="name-input"
+                   style="width:100%;margin-bottom:0;"
+                   placeholder="Введіть логін" autocomplete="username"
+                   onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;text-align:left;">
+            <label for="login-password" style="font-size:13px;font-weight:600;color:#555;">Пароль</label>
+            <div style="position:relative;">
+                <input type="password" id="login-password" class="name-input"
+                       style="width:100%;margin-bottom:0;padding-right:44px;"
+                       placeholder="Введіть пароль" autocomplete="current-password"
+                       onkeydown="if(event.key==='Enter')NMT.login()">
+                <button onclick="NMT.togglePassword()" tabindex="-1"
+                    style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+                           background:none;border:none;cursor:pointer;color:#888;padding:0;display:flex;">
+                    <svg id="icon-pw-show" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <svg id="icon-pw-hide" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                         style="display:none;">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8
+                                 a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4
+                                 c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19
+                                 m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <!-- Navigation -->
-    <div class="question-nav">
-      <button class="btn-nav" id="btnPrev" onclick="NMT.prev()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><path d="M15 18l-6-6 6-6"/></svg>
-        Попереднє
-      </button>
-      <span class="nav-counter" id="navCounter">1 / 36</span>
-      <button class="btn-nav" id="btnNext" onclick="NMT.next()">
-        Наступне
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><path d="M9 18l6-6-6-6"/></svg>
-      </button>
-    </div>
-  </section>
+    <button id="btn-login" class="big-btn" onclick="NMT.login()">Увійти</button>
 
-  <!-- RIGHT: question grid -->
-  <aside class="question-grid-panel" id="gridPanel">
-    <div class="grid-header">
-      <span class="grid-title">Перелік завдань</span>
-      <div class="grid-legend">
-        <span class="legend-item"><span class="legend-dot answered"></span>Відповів</span>
-        <span class="legend-item"><span class="legend-dot current"></span>Поточне</span>
-        <span class="legend-item"><span class="legend-dot empty"></span>Без відповіді</span>
-      </div>
-    </div>
-    <div class="question-grid" id="questionGrid"></div>
-    <div class="grid-progress">
-      <div class="progress-bar-wrap">
-        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
-      </div>
-      <span class="progress-text" id="progressText">0 з 36 завдань</span>
-    </div>
-  </aside>
-
-</main>
-
-<!-- ═══════════════════════════════════════════════════════ FINISH MODAL -->
-<div class="modal-overlay" id="finishModal" style="display:none">
-  <div class="modal-box">
-    <div class="modal-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary-red)" stroke-width="2" width="44" height="44">
-        <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
-      </svg>
-    </div>
-    <h2 class="modal-title">Завершити тест?</h2>
-    <p class="modal-body">Ви відповіли на <strong id="answeredCount">0</strong> із <strong id="totalCount">36</strong> завдань.<br>Після підтвердження змінити відповіді буде неможливо.</p>
-    <div class="modal-actions">
-      <button class="btn-modal-cancel" onclick="NMT.closeModal()">Повернутись</button>
-      <button class="btn-modal-confirm" onclick="NMT.confirmFinish()">Підтвердити завершення</button>
-    </div>
-  </div>
+    <p style="position:absolute;bottom:20px;font-size:11px;color:#bbb;text-align:center;width:100%;">
+        © Освіта.ua, 2026. Доступ надається адміністратором.
+    </p>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════ SUCCESS SCREEN -->
-<div class="success-screen" id="successScreen" style="display:none">
-  <div class="success-content">
-    <div class="success-emblem">
-      <svg viewBox="0 0 80 80" fill="none">
-        <circle cx="40" cy="40" r="38" stroke="rgba(255,255,255,0.4)" stroke-width="2.5" fill="rgba(255,255,255,0.12)"/>
-        <path d="M24 40l12 12 20-24" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+<!-- ══════════════ WATERMARKS ══════════════ -->
+<div id="watermarks"></div>
+
+<!-- ══════════════ FINISH MODAL ══════════════ -->
+<div id="finish-modal-overlay" class="modal-overlay">
+    <div class="finish-modal">
+        <div class="modal-title">Ви впевнені, що бажаєте завершити роботу над тестом?</div>
+        <div class="modal-text">
+            Переконайтеся, що Ви натиснули «Зберегти відповідь» біля кожного виконаного завдання.<br>
+            Ви відповіли на <strong id="answered-count">0</strong> із <strong id="total-count">36</strong> завдань.
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-outline" onclick="NMT.confirmFinish()">Так, завершити роботу</button>
+            <button class="big-btn" style="padding:10px 20px;font-size:14px;" onclick="NMT.closeModal()">Ні, повернутися до виконання</button>
+        </div>
+        <div id="unanswered-warning" class="unanswered-box" style="display:none;">
+            <div style="background:var(--primary-red);color:white;border-radius:50%;
+                        min-width:24px;height:24px;display:flex;justify-content:center;
+                        align-items:center;font-weight:bold;">!</div>
+            <div>
+                <b>Не збережено відповіді до завдань:</b><br>
+                <span id="unanswered-list" style="font-size:13px;margin-top:5px;display:block;"></span>
+            </div>
+        </div>
     </div>
-    <h1 class="success-title">Тест успішно завершено!</h1>
-    <p class="success-subtitle">Ваші відповіді збережено та передано до системи.</p>
-    <p class="success-code">Код підтвердження: <strong id="confirmCode">—</strong></p>
-    <p class="success-hint">Ви можете закрити вікно Safe Exam Browser.<br>Натисніть <kbd>Ctrl + Q</kbd> і введіть пароль виходу.</p>
-  </div>
+</div>
+
+<!-- ══════════════ SUCCESS SCREEN ══════════════ -->
+<div id="success-screen" class="success-screen" style="display:none;">
+    <div class="success-content">
+        <div style="margin-bottom:20px;">
+            <svg viewBox="0 0 80 80" fill="none" width="80" height="80">
+                <circle cx="40" cy="40" r="38" stroke="rgba(255,255,255,0.4)"
+                        stroke-width="2.5" fill="rgba(255,255,255,0.12)"/>
+                <path d="M24 40l12 12 20-24" stroke="#fff" stroke-width="4"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <h1 class="success-title">Тест успішно завершено!</h1>
+        <p style="font-size:15px;color:rgba(255,255,255,0.85);margin-bottom:16px;">
+            Ваші відповіді збережено та передано до системи.
+        </p>
+        <p class="success-code">Код підтвердження: <strong id="confirm-code">—</strong></p>
+        <p style="font-size:13px;color:rgba(255,255,255,0.7);">
+            Ви можете закрити вікно Safe Exam Browser.<br>
+            Натисніть <kbd style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);
+                           border-radius:3px;padding:1px 6px;font-family:monospace;">Ctrl + Q</kbd>
+            і введіть пароль виходу.
+        </p>
+    </div>
+</div>
+
+<!-- ══════════════ MAIN TEST INTERFACE ══════════════ -->
+<div id="main-test-interface" style="display:none;">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-logo">
+            <svg width="35" height="35" viewBox="0 0 35 35">
+                <rect width="35" height="17.5" fill="#FFD700"/>
+                <rect y="17.5" width="35" height="17.5" fill="#005BBB"/>
+                <circle cx="17.5" cy="17.5" r="7" fill="white" fill-opacity="0.95"/>
+                <text x="17.5" y="21.5" text-anchor="middle" fill="#c61036"
+                      font-size="7" font-weight="700" font-family="Open Sans,sans-serif">НМТ</text>
+            </svg>
+            ПРОБНИЙ НМТ — 2026
+        </div>
+        <div class="header-user" id="user-menu-btn">
+            <span id="display-user-name">—</span> ▼
+            <div class="logout-menu" id="logout-menu" onclick="NMT.logout()">Вийти</div>
+        </div>
+    </div>
+
+    <!-- Top nav -->
+    <div class="top-nav">
+        <a id="nav-exam" class="active" onclick="NMT.showExam()">Іспит</a>
+        <a id="nav-instruction" onclick="NMT.showInstruction()">Інструкція</a>
+    </div>
+
+    <!-- Info plashka -->
+    <div class="info-plashka-container" id="plashka-container">
+        <div class="info-plashka">
+            <div class="info-text" id="plashka-text">
+                <span style="color:var(--primary-red);">Пробний НМТ-2026</span> обмежений у часі.
+                Таймер праворуч показує, скільки часу залишилося. Вибравши відповідь,
+                не забудьте натиснути «Зберегти відповідь».
+                <a href="#" class="hide-link"
+                   onclick="document.getElementById('plashka-text').style.display='none';
+                            event.preventDefault();">Сховати</a>
+            </div>
+            <div class="timer-controls">
+                <button class="btn-finish" onclick="NMT.openFinishModal()">Завершити роботу над тестом</button>
+                <div class="timer-display" id="main-timer">2:00:00</div>
+                <button class="btn-eye" id="toggle-timer-btn" onclick="NMT.toggleTimer()" title="Сховати/Показати таймер">
+                    <svg id="icon-eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <svg id="icon-eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                         style="display:none;">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8
+                                 a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4
+                                 c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19
+                                 m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instruction panel -->
+    <div id="instruction-area" style="display:none;padding:40px;background:white;
+         line-height:1.6;font-size:15px;max-width:900px;margin:0 auto;">
+        <h2 style="text-align:center;">НАЦІОНАЛЬНИЙ МУЛЬТИПРЕДМЕТНИЙ ТЕСТ</h2>
+        <p style="margin-top:16px;">НМТ складається з кількох навчальних предметів.
+        Під час тестування Ви можете самостійно розподіляти час між предметами.
+        Вибравши відповідь, натисніть <b>«Зберегти відповідь»</b>.</p>
+        <p style="margin-top:12px;">На боковій панелі відображаються опрацьовані завдання.
+        <b>Увага!</b> Якщо Ви не збережете відповідь, її не буде зараховано.</p>
+    </div>
+
+    <!-- Test area -->
+    <div id="test-area" style="display:flex;">
+        <div class="main-layout" style="padding-top:20px;width:100%;">
+
+            <!-- Left panel -->
+            <div class="left-panel">
+                <div class="breadcrumbs">
+                    <span>Завдання
+                        <span class="active-bread" id="breadcrumb-q">1</span>
+                        із <span id="breadcrumb-total">36</span>
+                    </span>
+                    <span class="expand-btn" onclick="NMT.toggleExpand()" title="Розгорнути на весь екран">
+                        <svg id="icon-expand" width="18" height="18" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                        </svg>
+                        <svg id="icon-collapse" width="18" height="18" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                            <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3
+                                     m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+                        </svg>
+                    </span>
+                </div>
+
+                <div class="subject-tabs" id="subject-tabs"></div>
+
+                <div class="content-area">
+                    <h2 class="subject-title" id="subject-title"></h2>
+                    <div id="bookmark-btn" class="bookmark" onclick="NMT.toggleBookmark()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <span id="bm-text">Додати цю сторінку до закладок</span>
+                    </div>
+                    <div id="questions-container"></div>
+                    <div class="bottom-nav">
+                        <button class="nav-btn" id="btn-prev" onclick="NMT.prev()">◀ Попереднє</button>
+                        <span class="nav-counter" id="nav-counter">1 / 36</span>
+                        <button class="nav-btn" id="btn-next" onclick="NMT.next()">Наступне ▶</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right panel / Grid -->
+            <div class="right-panel">
+                <div class="grid-title">Перелік завдань</div>
+                <div class="grid-container" id="nav-grid"></div>
+            </div>
+
+        </div>
+    </div>
 </div>
 
 <script src="/js/nmt.js"></script>
