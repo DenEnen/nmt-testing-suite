@@ -14,62 +14,31 @@
 <!-- ══════════════ WATERMARKS ══════════════ -->
 <div id="watermarks"></div>
 
-<!-- ══════════════ LOGIN SCREEN ══════════════ -->
-<div id="screen-login" class="overlay-screen">
-
-    <p style="font-size:13px;font-weight:600;color:#999;letter-spacing:.08em;
-              text-transform:uppercase;margin-bottom:24px;">
-        ПРОБНИЙ НМТ — 2026
-    </p>
-
-    <div class="login-box">
-        <div class="login-box-header">Вхід до системи тестування</div>
-        <div class="login-box-body">
-
-            <div id="login-error" class="login-error"></div>
-
-            <div class="form-group">
-                <label class="form-label" for="login-username">Логін</label>
-                <input type="text" id="login-username" class="form-input"
-                       placeholder="Введіть логін"
-                       autocomplete="username" spellcheck="false"
-                       onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="login-password">Пароль</label>
-                <div class="form-input-wrap">
-                    <input type="password" id="login-password" class="form-input"
-                           placeholder="Введіть пароль"
-                           autocomplete="current-password"
-                           onkeydown="if(event.key==='Enter')NMT.login()">
-                    <button class="pw-toggle" tabindex="-1" onclick="NMT.togglePassword()">
-                        <svg id="icon-pw-show" width="18" height="18" viewBox="0 0 24 24"
-                             fill="none" stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                        <svg id="icon-pw-hide" width="18" height="18" viewBox="0 0 24 24"
-                             fill="none" stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8
-                                     a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4
-                                     c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19
-                                     m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                            <line x1="1" y1="1" x2="23" y2="23"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <button id="btn-login" class="btn-login" onclick="NMT.login()">Увійти</button>
-
-        </div>
+<!-- ══════════════ LOADING / ERROR SCREEN ══════════════
+     Replaces the login form entirely.
+     Authentication is handled by the SEB config:
+       startURL = https://exam.com/?t=STUDENT_TOKEN
+     JS reads ?t= on page load and calls /api/session.
+══════════════════════════════════════════════════════ -->
+<div id="screen-init" class="overlay-screen">
+    <div id="init-loading" style="text-align:center;">
+        <div class="spinner"></div>
+        <p style="margin-top:16px;font-size:14px;color:#888;">Ініціалізація сесії…</p>
     </div>
-
-    <p style="font-size:11px;color:#ccc;">© Освіта.ua, 2026. Доступ надається адміністратором.</p>
-
+    <div id="init-error" style="display:none;max-width:400px;">
+        <div style="width:52px;height:52px;border-radius:50%;background:#fef2f4;
+                    display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                 stroke="var(--primary-red)" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        </div>
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:10px;">Помилка ініціалізації</h2>
+        <p id="init-error-msg" style="font-size:14px;color:#666;line-height:1.6;"></p>
+    </div>
 </div>
 
 <!-- ══════════════ FINISH MODAL ══════════════ -->
@@ -97,30 +66,6 @@
     </div>
 </div>
 
-<!-- ══════════════ SUCCESS SCREEN ══════════════ -->
-<div id="success-screen" class="success-screen" style="display:none;">
-    <div class="success-content">
-        <svg viewBox="0 0 80 80" fill="none" width="72" height="72" style="margin-bottom:18px;">
-            <circle cx="40" cy="40" r="38"
-                    stroke="rgba(255,255,255,0.35)" stroke-width="2"
-                    fill="rgba(255,255,255,0.1)"/>
-            <path d="M24 40l12 12 20-24" stroke="#fff" stroke-width="3.5"
-                  stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <h1 class="success-title">Тест успішно завершено!</h1>
-        <p style="font-size:15px;color:rgba(255,255,255,0.85);margin-bottom:14px;">
-            Ваші відповіді збережено та передано до системи.
-        </p>
-        <p class="success-code">Код підтвердження: <strong id="confirm-code">—</strong></p>
-        <p style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.7;">
-            Натисніть
-            <kbd style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);
-                        border-radius:3px;padding:1px 7px;font-family:monospace;">Ctrl+Q</kbd>
-            і введіть пароль виходу Safe Exam Browser.
-        </p>
-    </div>
-</div>
-
 <!-- ══════════════ MAIN TEST INTERFACE ══════════════ -->
 <div id="main-test-interface" style="display:none;">
 
@@ -128,13 +73,14 @@
     <div class="header">
         <div class="header-logo">ПРОБНИЙ НМТ — 2026</div>
         <div class="header-user" id="user-menu-btn">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
             </svg>
             <span id="display-user-name">—</span>
-            <span style="font-size:10px;color:#aaa;">▼</span>
+            <span style="font-size:10px;color:#bbb;">▼</span>
             <div class="logout-menu" id="logout-menu" onclick="NMT.logout()">Вийти</div>
         </div>
     </div>
@@ -147,13 +93,14 @@
 
     <!-- Info plashka -->
     <div class="info-plashka-container" id="plashka-container">
-        <div class="info-plashka">
-            <div class="info-text" id="plashka-text">
+        <div class="info-plashka" id="plashka-inner">
+            <div class="info-text">
                 <strong style="color:var(--primary-red);">Пробний НМТ-2026</strong>
                 обмежений у часі. Таймер праворуч показує, скільки часу залишилося.
                 Вибравши відповідь, натисніть «Зберегти відповідь».
                 <a href="#" class="hide-link"
-                   onclick="event.preventDefault();this.closest('.info-plashka').style.display='none';">Сховати</a>
+                   onclick="event.preventDefault();
+                            document.getElementById('plashka-inner').style.display='none';">Сховати</a>
             </div>
             <div class="timer-controls">
                 <button class="btn-finish" onclick="NMT.openFinishModal()">
@@ -188,10 +135,10 @@
             НАЦІОНАЛЬНИЙ МУЛЬТИПРЕДМЕТНИЙ ТЕСТ
         </h2>
         <p>НМТ складається з кількох навчальних предметів. Під час тестування Ви можете
-        самостійно розподіляти час між предметами. Вибравши відповідь, натисніть
+        самостійно розподіляти час між ними. Вибравши відповідь, натисніть
         <strong>«Зберегти відповідь»</strong>.</p>
-        <p style="margin-top:12px;">На боковій панелі відображаються опрацьовані завдання.
-        <strong>Увага!</strong> Якщо Ви не збережете відповідь, її не буде зараховано.</p>
+        <p style="margin-top:12px;"><strong>Увага!</strong>
+        Якщо Ви не збережете відповідь, її не буде зараховано.</p>
     </div>
 
     <!-- Test area -->
@@ -203,7 +150,7 @@
                 <div class="breadcrumbs">
                     <span>
                         Завдання&nbsp;<span class="active-bread" id="breadcrumb-q">1</span>
-                        &nbsp;із&nbsp;<span id="breadcrumb-total">36</span>
+                        &nbsp;із&nbsp;<span id="breadcrumb-total">0</span>
                     </span>
                     <span class="expand-btn" onclick="NMT.toggleExpand()" title="Розгорнути">
                         <svg id="icon-expand" width="16" height="16" viewBox="0 0 24 24"
@@ -232,7 +179,7 @@
                     <div id="questions-container"></div>
                     <div class="bottom-nav">
                         <button class="nav-btn" id="btn-prev" onclick="NMT.prev()">◀ Попереднє</button>
-                        <span class="nav-counter" id="nav-counter">1 / 36</span>
+                        <span class="nav-counter" id="nav-counter">1 / 0</span>
                         <button class="nav-btn" id="btn-next" onclick="NMT.next()">Наступне ▶</button>
                     </div>
                 </div>

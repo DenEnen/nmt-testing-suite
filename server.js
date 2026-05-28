@@ -1,131 +1,235 @@
-const express  = require('express');
-const cors     = require('cors');
-const path     = require('path');
-const fs       = require('fs');
-const crypto   = require('crypto');
+'use strict';
+const express = require('express');
+const cors    = require('cors');
+const path    = require('path');
+const fs      = require('fs');
+const crypto  = require('crypto');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
-
 const PUBLIC_DIR = path.resolve(__dirname, 'public');
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR, { index: false }));
 
-/* ══════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════
    ADMIN CONFIGURATION
    
-   Set credentials via environment variables:
-     EXAM_USERS=username1:password1,username2:password2
+   Set via environment variables (Render dashboard or .env):
    
-   Or add them directly to USERS below.
-   Each user gets their own session.
-══════════════════════════════════════════ */
-const USERS = parseUsers(process.env.EXAM_USERS || 'student1:pass123,student2:pass456');
+   EXAM_TOKENS  — comma-separated  token:DisplayName  pairs.
+                  The admin puts each student's token into
+                  their personal .seb file startURL:
+                  https://yourapp.onrender.com/?t=TOKEN
+                  Example:
+                  EXAM_TOKENS=abc123:Іваненко Олег,xyz789:Петренко Анна
 
-function parseUsers(raw) {
+   SEB_EXAM_KEY — Browser Exam Key shown in SEB Preferences →
+                  Exam tab after saving your .seb config.
+                  Leave empty to skip BEK validation (dev only).
+
+   QUIT_URL     — URL SEB auto-quits on after submission.
+                  Must match quitURL in the .seb config.
+                  Default: /submitted
+══════════════════════════════════════════════════════════ */
+const EXAM_TOKENS = parseTokens(process.env.EXAM_TOKENS || 'demo123:Тестовий Учасник');
+const SEB_KEY     = (process.env.SEB_EXAM_KEY || '').trim();
+const QUIT_PATH   = process.env.QUIT_URL || '/submitted';
+
+function parseTokens(raw) {
     const map = {};
     raw.split(',').forEach(entry => {
-        const [u, p] = entry.trim().split(':');
-        if (u && p) map[u.trim()] = p.trim();
+        const colon = entry.indexOf(':');
+        if (colon > 0) {
+            const token = entry.slice(0, colon).trim();
+            const name  = entry.slice(colon + 1).trim();
+            if (token && name) map[token] = name;
+        }
     });
     return map;
 }
 
-// Active sessions: token → { username, startedAt }
+/* ── ACTIVE SESSIONS ─────────────────────────────────────
+   token → { name, startedAt, answers }
+─────────────────────────────────────────────────────────── */
 const sessions = {};
 
-/* ── SEB VERIFICATION (optional but recommended) ──────────────
-   Set SEB_EXAM_KEY in your .env to the Browser Exam Key hash
-   from your SEB config. Requests without a valid key are blocked.
-   Leave empty to skip SEB verification (development only).
+/* ══════════════════════════════════════════════════════════
+   MIDDLEWARE 1 — SEB User-Agent Gate
    
-   See: https://safeexambrowser.org/developer/seb-config-key.html
-─────────────────────────────────────────────────────────────── */
-const SEB_EXAM_KEY = process.env.SEB_EXAM_KEY || '';
+   Blocks any browser that is not Safe Exam Browser.
+   SEB always includes "SebBrowser" (Win) or "SEB" (macOS/iOS)
+   in its user-agent string.
+   
+   Per docs: checking the UA is the minimum integration step.
+   Combined with BEK validation below it is fully secure.
+══════════════════════════════════════════════════════════ */
+function requireSEB(req, res, next) {
+    // Allow health-check and static assets without SEB check
+    if (req.path === '/health') return next();
+    if (!req.path.startsWith('/api')) return next(); // static files pass through
 
-function verifySEB(req) {
-    if (!SEB_EXAM_KEY) return true; // not enforced in dev
-    const sebHeader = req.headers['x-safeexambrowser-requesthash']; // X-SafeExamBrowser-RequestHash
-    if (!sebHeader) return false;
-    // SEB hash = SHA256( URL + SEB_EXAM_KEY )
-    const url  = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
-    const hash = crypto.createHash('sha256').update(url + SEB_EXAM_KEY).digest('hex');
-    return hash === sebHeader;
-}
-
-/* ── LOGIN ────────────────────────────────────────────────────
-   POST /api/login   { username, password }
-   Returns { ok, token, displayName } or { ok: false, error }
-─────────────────────────────────────────────────────────────── */
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body || {};
-
-    if (!username || !password) {
-        return res.status(400).json({ ok: false, error: 'Введіть логін та пароль.' });
+    const ua = req.headers['user-agent'] || '';
+    if (!/SEB|SebBrowser/i.test(ua)) {
+        console.warn(`[blocked] non-SEB access from UA="${ua}" path=${req.path}`);
+        return res.status(403).json({
+            ok: false,
+            error: 'Цей ресурс доступний лише через Safe Exam Browser.'
+        });
     }
-
-    const stored = USERS[username];
-    if (!stored || stored !== password) {
-        console.log(`[login] FAILED  user="${username}" ip=${req.ip}`);
-        return res.status(401).json({ ok: false, error: 'Невірний логін або пароль.' });
-    }
-
-    // Revoke any existing session for this user
-    for (const [tok, s] of Object.entries(sessions)) {
-        if (s.username === username) delete sessions[tok];
-    }
-
-    const token = crypto.randomBytes(24).toString('hex');
-    sessions[token] = { username, startedAt: Date.now() };
-
-    console.log(`[login] OK      user="${username}" token=${token.slice(0, 8)}…`);
-    res.json({ ok: true, token, displayName: username });
-});
-
-/* ── AUTH MIDDLEWARE ──────────────────────────────────────── */
-function requireAuth(req, res, next) {
-    const auth = req.headers['authorization'] || '';
-    const token = auth.replace('Bearer ', '').trim();
-    if (!token || !sessions[token]) {
-        return res.status(401).json({ ok: false, error: 'Unauthorized' });
-    }
-    req.session = sessions[token];
     next();
 }
+app.use(requireSEB);
 
-/* ── SESSION / EXAM DATA ──────────────────────────────────── */
-app.get('/api/session/:id', requireAuth, (req, res) => {
+/* ══════════════════════════════════════════════════════════
+   MIDDLEWARE 2 — Browser Exam Key Validation
+   
+   SEB sends X-SafeExamBrowser-RequestHash on every request.
+   Hash = SHA256( requestURL + BrowserExamKey )
+   
+   Per docs: copy the BEK from SEB Preferences → Exam tab
+   and set it as SEB_EXAM_KEY env var.
+   
+   Only runs when SEB_EXAM_KEY is configured (skips in dev).
+══════════════════════════════════════════════════════════ */
+function validateBEK(req, res, next) {
+    if (!SEB_KEY) return next(); // dev mode: skip
+
+    const bekHeader = req.headers['x-safeexambrowser-requesthash'];
+    if (!bekHeader) {
+        return res.status(403).json({ ok: false, error: 'Missing SEB request hash.' });
+    }
+
+    // Reconstruct the exact URL SEB used (including query string)
+    const proto = req.headers['x-forwarded-proto'] || req.protocol;
+    const host  = req.headers['x-forwarded-host']  || req.get('host');
+    const fullUrl = `${proto}://${host}${req.originalUrl}`;
+
+    const expected = crypto.createHash('sha256')
+        .update(fullUrl + SEB_KEY)
+        .digest('hex');
+
+    if (bekHeader !== expected) {
+        console.warn(`[bek-fail] expected=${expected.slice(0,16)}… got=${bekHeader.slice(0,16)}…`);
+        return res.status(403).json({ ok: false, error: 'Invalid SEB Browser Exam Key.' });
+    }
+    next();
+}
+app.use('/api', validateBEK);
+
+/* ══════════════════════════════════════════════════════════
+   API — SESSION INIT
+   
+   SEB opens: startURL = https://exam.com/?t=STUDENT_TOKEN
+   JS on the page reads ?t= and calls GET /api/session?t=TOKEN
+   No login form — the .seb config IS the authentication.
+══════════════════════════════════════════════════════════ */
+app.get('/api/session', (req, res) => {
+    const token = (req.query.t || '').trim();
+
+    if (!token) {
+        return res.status(400).json({ ok: false, error: 'Token missing.' });
+    }
+
+    const name = EXAM_TOKENS[token];
+    if (!name) {
+        console.warn(`[auth] unknown token="${token}"`);
+        return res.status(401).json({ ok: false, error: 'Недійсний токен сесії.' });
+    }
+
+    // Revoke any previous session for this student
+    for (const [k, s] of Object.entries(sessions)) {
+        if (s.name === name) delete sessions[k];
+    }
+
+    const sessionId = crypto.randomBytes(16).toString('hex');
+    sessions[sessionId] = { name, token, startedAt: Date.now(), answers: {} };
+
+    console.log(`[session] START name="${name}" sid=${sessionId.slice(0,8)}…`);
     res.json({
-        sessionId:       req.params.id,
-        student:         { name: req.session.username, code: req.params.id.slice(-8) },
-        startedAt:       req.session.startedAt,
+        ok:              true,
+        sessionId,
+        student:         { name },
+        startedAt:       sessions[sessionId].startedAt,
         durationSeconds: 7200,
         subjects
     });
 });
 
 /* ── SAVE ANSWER ─────────────────────────────────────────── */
-app.post('/api/session/:id/answer', requireAuth, (req, res) => {
+app.post('/api/session/:sid/answer', (req, res) => {
+    const s = sessions[req.params.sid];
+    if (!s) return res.status(401).json({ ok: false, error: 'Session not found.' });
+
     const { questionId, answer } = req.body;
-    console.log(`[answer] user="${req.session.username}" q=${questionId} a=${JSON.stringify(answer)}`);
+    if (answer != null) s.answers[questionId] = answer;
+    else delete s.answers[questionId];
+
+    console.log(`[answer] "${s.name}" q=${questionId} a=${JSON.stringify(answer)}`);
     res.json({ ok: true });
 });
 
-/* ── SUBMIT ─────────────────────────────────────────────── */
-app.post('/api/session/:id/submit', requireAuth, (req, res) => {
-    const answered = Object.keys(req.body.answers || {}).length;
-    console.log(`[submit] user="${req.session.username}" answered=${answered}`);
-    // Invalidate session after submission
-    delete sessions[Object.entries(sessions).find(([, s]) => s.username === req.session.username)?.[0]];
-    res.json({ ok: true, message: 'Тест завершено успішно' });
+/* ── SUBMIT ──────────────────────────────────────────────── */
+app.post('/api/session/:sid/submit', (req, res) => {
+    const s = sessions[req.params.sid];
+    if (!s) return res.status(401).json({ ok: false, error: 'Session not found.' });
+
+    const total    = Object.keys(req.body.answers || {}).length;
+    const duration = Math.round((Date.now() - s.startedAt) / 1000);
+    console.log(`[submit] "${s.name}" answered=${total} duration=${duration}s`);
+
+    delete sessions[req.params.sid]; // invalidate session
+
+    // Tell the client to navigate to QUIT_PATH, which SEB will detect
+    // and automatically quit (per SEB docs: quitURL feature)
+    res.json({ ok: true, quitUrl: QUIT_PATH });
 });
 
-/* ── HEALTH ─────────────────────────────────────────────── */
-app.get('/health', (req, res) => res.send('OK'));
+/* ══════════════════════════════════════════════════════════
+   QUIT URL ENDPOINT
+   
+   Per SEB docs: set quitURL in the .seb config to this path.
+   When SEB navigates here it automatically exits kiosk mode.
+   No more "press Ctrl+Q" instructions needed.
+   
+   quitURLConfirm = false  →  quits without asking the student.
+══════════════════════════════════════════════════════════ */
+app.get(QUIT_PATH, (req, res) => {
+    res.send(`<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Тест завершено</title>
+  <style>
+    body { margin:0; font-family: 'Open Sans', sans-serif;
+           background:#c61036; color:#fff;
+           display:flex; align-items:center; justify-content:center;
+           height:100vh; text-align:center; }
+    h1 { font-size:28px; margin-bottom:10px; }
+    p  { font-size:15px; opacity:.85; }
+  </style>
+</head>
+<body>
+  <div>
+    <svg viewBox="0 0 80 80" fill="none" width="64" height="64" style="margin-bottom:16px;">
+      <circle cx="40" cy="40" r="38"
+              stroke="rgba(255,255,255,0.35)" stroke-width="2"
+              fill="rgba(255,255,255,0.12)"/>
+      <path d="M24 40l12 12 20-24" stroke="#fff" stroke-width="3.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1>Тест успішно завершено!</h1>
+    <p>Ваші відповіді збережено.<br>Safe Exam Browser закривається…</p>
+  </div>
+</body>
+</html>`);
+});
 
-/* ── SPA CATCH-ALL ──────────────────────────────────────── */
+/* ── HEALTH ──────────────────────────────────────────────── */
+app.get('/health', (_req, res) => res.send('OK'));
+
+/* ── SPA CATCH-ALL ───────────────────────────────────────── */
 app.get('*', (req, res) => {
     const index = path.join(PUBLIC_DIR, 'index.html');
     if (!fs.existsSync(index)) return res.status(500).send('index.html not found');
@@ -133,12 +237,13 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`[ready] NMT on port ${PORT}`);
-    console.log(`[users] ${Object.keys(USERS).join(', ')}`);
-    if (!SEB_EXAM_KEY) console.warn('[warn]  SEB_EXAM_KEY not set — SEB verification disabled');
+    console.log(`[ready]  NMT on port ${PORT}`);
+    console.log(`[tokens] ${Object.keys(EXAM_TOKENS).length} student(s) registered`);
+    console.log(`[bek]    SEB_EXAM_KEY ${SEB_KEY ? 'SET ✓' : 'NOT SET — validation disabled'}`);
+    console.log(`[quit]   Quit URL: ${QUIT_PATH}`);
 });
 
-/* ── QUESTION DATA ────────────────────────────────────────── */
+/* ── QUESTION DATA ───────────────────────────────────────── */
 const subjects = [
     { id:'ukr',     title:'Українська мова та література', shortTitle:'Укр. мова',  questions: generateQuestions('ukr',     36) },
     { id:'math',    title:'Математика',                    shortTitle:'Математика', questions: generateQuestions('math',    30) },
@@ -152,7 +257,7 @@ function generateQuestions(subjectId, count) {
         type:    i < count - 6 ? 'single' : (i < count - 2 ? 'multi' : 'open'),
         text:    getQuestionText(subjectId, i),
         options: i < count - 2
-            ? ['А','Б','В','Г'].map(l => ({ label: l, text: `Варіант відповіді ${l} для завдання ${i + 1}` }))
+            ? ['А','Б','В','Г'].map(l => ({ label: l, text: `Варіант відповіді ${l} — завдання ${i + 1}` }))
             : null,
         answer: null
     }));
@@ -166,7 +271,7 @@ function getQuestionText(subject, idx) {
         math:    [`Знайдіть значення виразу 2x²+3x−5 при x=2 (завдання ${idx+1}).`,
                   `Розв'яжіть рівняння log₂(x+3)=4 (завдання ${idx+1}).`,
                   `Обчисліть похідну f(x)=sin(3x)·eˣ (завдання ${idx+1}).`],
-        history: [`Коли була проголошена незалежність України? (завдання ${idx+1})`,
+        history: [`Коли проголошено незалежність України? (завдання ${idx+1})`,
                   `Хто підписав Переяславську угоду з боку України? (завдання ${idx+1})`,
                   `Укажіть рік заснування Київської Русі (завдання ${idx+1}).`]
     };

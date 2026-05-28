@@ -2,130 +2,254 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  ╔══════════════════════════════════════════════════════════════╗
-  ║   Safe Exam Browser — NMT Testing Suite Configuration       ║
-  ║   Ukrainian National Multipurpose Test UI Replica           ║
-  ║                                                             ║
-  ║   HOW TO USE:                                               ║
-  ║   1. Replace YOUR_RENDER_URL with your Render.com URL       ║
-  ║   2. Replace YOUR_QUIT_PASSWORD with a secure password      ║
-  ║   3. Open SEB, load this file (File → Open Settings)        ║
-  ╚══════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════╗
+║  Safe Exam Browser — NMT Testing Suite                          ║
+║  Per-student config template                                     ║
+║                                                                  ║
+║  SETUP CHECKLIST (admin):                                        ║
+║  1. Replace EXAM_URL with your Render.com URL                    ║
+║  2. Replace STUDENT_TOKEN with student's unique token            ║
+║     (must match an entry in server EXAM_TOKENS env var)          ║
+║  3. Replace QUIT_PASSWORD_SHA256 with SHA256 of your quit pass   ║
+║     generate: echo -n 'yourpass' | sha256sum                     ║
+║  4. Save via SEB Preferences → File → Save Settings As…         ║
+║     (this encrypts the file properly)                            ║
+║  5. Copy the Browser Exam Key shown in SEB Preferences → Exam   ║
+║     and set it as SEB_EXAM_KEY env var on the server             ║
+║  6. Distribute the resulting .seb file to the student            ║
+╚══════════════════════════════════════════════════════════════════╝
 -->
 <plist version="1.0">
 <dict>
 
-  <!-- ═══ EXAM URL ══════════════════════════════════════════════ -->
+  <!-- ══════════════════════════════════════════════════════
+       START URL
+       Each student gets a unique token in their .seb file.
+       The server reads ?t= and identifies the student.
+       No login form needed — this IS the authentication.
+  ══════════════════════════════════════════════════════════ -->
   <key>startURL</key>
-  <string>https://nmt-testing-suite.onrender.com/?session=demo</string>
+  <string>https://EXAM_URL/?t=STUDENT_TOKEN</string>
 
-  <!-- ═══ BROWSER RESTRICTIONS ══════════════════════════════════ -->
-  <!-- Prevent navigating away from the exam -->
+
+  <!-- ══════════════════════════════════════════════════════
+       QUIT URL  (SEB built-in feature)
+       When SEB navigates to this URL it auto-exits kiosk
+       mode. Triggered by the server after exam submission.
+       Set quitURLConfirm=false so it exits without asking.
+       Must match QUIT_URL env var on the server (/submitted).
+  ══════════════════════════════════════════════════════════ -->
+  <key>quitURL</key>
+  <string>https://EXAM_URL/submitted</string>
+
+  <key>quitURLConfirm</key>
+  <false/>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       BROWSER EXAM KEY  (SEB built-in security)
+       SEB automatically sends X-SafeExamBrowser-RequestHash
+       header on every request. The server validates it.
+       Enable here — the actual key is derived from ALL
+       settings in this file after it is saved/encrypted.
+  ══════════════════════════════════════════════════════════ -->
+  <key>sendBrowserExamKey</key>
+  <true/>
+
+  <!-- Clear any previous session cookies on start -->
+  <key>examSessionClearCookiesOnStart</key>
+  <true/>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       DISPLAY — fullscreen kiosk, no browser chrome
+  ══════════════════════════════════════════════════════════ -->
+  <!-- Fullscreen kiosk mode -->
   <key>browserViewMode</key>
   <integer>1</integer>
 
-  <!-- Disable the URL bar (kiosk-style) -->
+  <!-- Hide taskbar / SEB toolbar completely -->
   <key>showTaskBar</key>
   <false/>
 
-  <!-- Hide browser navigation buttons -->
+  <!-- Hide back/forward buttons -->
   <key>showNavigationButtons</key>
   <false/>
 
-  <!-- Disable reload / F5 -->
+  <!-- Hide address / URL bar -->
+  <key>showURL</key>
+  <false/>
+
+  <!-- Hide reload button -->
+  <key>showReloadButton</key>
+  <false/>
+
+  <!-- Disable in-browser reload (F5, Ctrl+R) -->
   <key>browserWindowAllowReload</key>
   <false/>
 
-  <!-- Block right-click context menu -->
-  <key>enableBrowserWindowToolbar</key>
-  <false/>
-
-  <!-- Allow zoom (useful for accessibility) -->
-  <key>allowBrowsingBackForward</key>
-  <false/>
-
-  <!-- ═══ ZOOM & DISPLAY ═════════════════════════════════════════ -->
+  <!-- Allow page zoom (accessibility) -->
   <key>zoomMode</key>
-  <integer>0</integer>
+  <integer>1</integer>
 
-  <!-- ═══ ALLOWED URLS ═══════════════════════════════════════════ -->
-  <!-- Whitelist only your Render domain -->
+  <!-- Prevent students from opening SEB preferences -->
+  <key>enablePreferencesKey</key>
+  <false/>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       URL FILTER — whitelist only the exam server
+       Prevents navigating away from the exam domain.
+  ══════════════════════════════════════════════════════════ -->
   <key>URLFilterEnable</key>
   <true/>
+
   <key>URLFilterEnableContentFilter</key>
   <true/>
+
   <key>URLFilterRules</key>
   <array>
+    <!-- Exam server -->
     <dict>
-      <key>action</key>
-      <integer>1</integer>
-      <!-- Allow your exam server -->
+      <key>action</key><integer>1</integer>
+      <key>regex</key><false/>
+      <key>active</key><true/>
       <key>expression</key>
-      <string>https://nmt-testing-suite.onrender.com/</string>
-      <key>regex</key>
-      <false/>
+      <string>EXAM_URL</string>
     </dict>
+    <!-- Google Fonts (loaded by exam UI) -->
     <dict>
-      <key>action</key>
-      <integer>1</integer>
-      <!-- Allow Google Fonts (used by UI) -->
+      <key>action</key><integer>1</integer>
+      <key>regex</key><false/>
+      <key>active</key><true/>
       <key>expression</key>
       <string>fonts.googleapis.com</string>
-      <key>regex</key>
-      <false/>
     </dict>
     <dict>
-      <key>action</key>
-      <integer>1</integer>
+      <key>action</key><integer>1</integer>
+      <key>regex</key><false/>
+      <key>active</key><true/>
       <key>expression</key>
       <string>fonts.gstatic.com</string>
-      <key>regex</key>
-      <false/>
+    </dict>
+    <!-- Block everything else -->
+    <dict>
+      <key>action</key><integer>0</integer>
+      <key>regex</key><true/>
+      <key>active</key><true/>
+      <key>expression</key>
+      <string>.*</string>
     </dict>
   </array>
 
-  <!-- ═══ KEYBOARD RESTRICTIONS ═════════════════════════════════ -->
-  <!-- Block Alt+Tab, Win key, etc. -->
-  <key>enableAltMouseWheel</key>
-  <false/>
 
-  <!-- Disable PrintScreen -->
-  <key>enablePrintScreen</key>
-  <false/>
+  <!-- ══════════════════════════════════════════════════════
+       KEYBOARD RESTRICTIONS
+       SEB blocks system-level shortcuts natively.
+       Individual key settings fine-tune what is allowed.
+  ══════════════════════════════════════════════════════════ -->
+  <!-- Block all F-keys -->
+  <key>enableF1</key><false/>
+  <key>enableF2</key><false/>
+  <key>enableF3</key><false/>
+  <key>enableF4</key><false/>
+  <key>enableF5</key><false/>
+  <key>enableF6</key><false/>
+  <key>enableF7</key><false/>
+  <key>enableF8</key><false/>
+  <key>enableF9</key><false/>
+  <key>enableF10</key><false/>
+  <key>enableF11</key><false/>
+  <key>enableF12</key><false/>
 
-  <!-- ═══ SYSTEM RESTRICTIONS ════════════════════════════════════ -->
-  <!-- Disable task switcher -->
+  <!-- Block Esc (could be used to exit fullscreen) -->
+  <key>enableEsc</key><false/>
+
+  <!-- Block Ctrl+Esc (Windows Start Menu) -->
+  <key>enableCtrlEsc</key><false/>
+
+  <!-- Block Alt+F4 (close window) -->
+  <key>enableAltF4</key><false/>
+
+  <!-- Block Windows Start Menu key -->
+  <key>enableStartMenu</key><false/>
+
+  <!-- Block right-click context menu -->
+  <key>enableRightMouse</key><false/>
+
+  <!-- Block PrintScreen / screen capture -->
+  <key>enablePrintScreen</key><false/>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       SYSTEM RESTRICTIONS
+  ══════════════════════════════════════════════════════════ -->
+  <!-- Block task switcher (Alt+Tab) -->
+  <key>enableAppSwitcherCheck</key>
+  <true/>
+
+  <!-- Block user switching -->
   <key>enableSwitchUser</key>
   <false/>
 
-  <!-- Prevent sleep/screen saver during exam -->
-  <key>enableVirtualMachine</key>
-  <false/>
-
-  <!-- Detect if running in VM (set true to block VMs) -->
+  <!-- Terminate SEB if a blocked process is detected -->
   <key>detectStoppedProcess</key>
   <true/>
 
-  <!-- ═══ AUDIO ════════════════════════════════════════════════== -->
+  <!-- Prevent running inside a virtual machine -->
+  <key>enableVirtualMachine</key>
+  <false/>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       BROWSER FEATURES — disable academic-dishonesty tools
+  ══════════════════════════════════════════════════════════ -->
+  <!-- Disable spell check (would reveal correct answers) -->
+  <key>enableSpellChecking</key>
+  <false/>
+
+  <!-- Disable dictionary / translation lookup -->
+  <key>allowDictionaryLookup</key>
+  <false/>
+
+  <!-- Disable audio controls -->
   <key>audioControlEnabled</key>
   <false/>
 
-  <!-- ═══ QUIT / EXIT ════════════════════════════════════════════ -->
-  <!-- Password required to quit SEB -->
-  <key>hashedQuitPassword</key>
-  <!-- SHA-256 hash of "YOUR_QUIT_PASSWORD"                        -->
-  <!-- Generate: echo -n 'your_password' | sha256sum              -->
-  <!-- Replace this placeholder with your actual SHA-256 hash:    -->
-  <string>a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3</string>
+  <!-- Block back/forward navigation -->
+  <key>allowBrowsingBackForward</key>
+  <false/>
 
-  <!-- Show "Quit" button in toolbar (optional) -->
-  <key>showQuitButton</key>
-  <true/>
+  <!-- Block new windows / popups -->
+  <key>newBrowserWindowByLinkPolicy</key>
+  <integer>0</integer>
 
-  <!-- ═══ BROWSER USER AGENT ════════════════════════════════════ -->
-  <!-- Identifies requests as coming from SEB -->
+  <!-- Block clipboard paste from outside SEB -->
+  <key>enableClipboard</key>
+  <false/>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       CUSTOM USER AGENT SUFFIX
+       Server checks for this string to block non-SEB access.
+       Must match the check in server.js requireSEB middleware.
+  ══════════════════════════════════════════════════════════ -->
   <key>browserUserAgentSuffix</key>
-  <string>SEB/3.0 NMT-Testing</string>
+  <string>SebBrowser NMT-2026</string>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       QUIT PASSWORD
+       Students cannot close SEB without this password.
+       Generate SHA-256: echo -n 'yourpassword' | sha256sum
+       Used by the invigilator to close SEB if needed
+       (though normally SEB exits via the Quit URL above).
+  ══════════════════════════════════════════════════════════ -->
+  <key>hashedQuitPassword</key>
+  <string>QUIT_PASSWORD_SHA256</string>
+
+  <key>showQuitButton</key>
+  <false/>
 
 </dict>
 </plist>
